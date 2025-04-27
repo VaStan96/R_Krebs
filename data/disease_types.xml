@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<disease_types>
+  <disease_type>
+    <icd10_code>C50</icd10_code>
+    <disease_name>Brustkrebs</disease_name>
+    <classification>C</classification>
+  </disease_type>
+  <disease_type>
+    <icd10_code>C34</icd10_code>
+    <disease_name>Lungenkrebs</disease_name>
+    <classification>C</classification>
+  </disease_type>
+  <disease_type>
+    <icd10_code>C61</icd10_code>
+    <disease_name>Prostatakrebs</disease_name>
+    <classification>C</classification>
+  </disease_type>
+  <disease_type>
+    <icd10_code>I10</icd10_code>
+    <disease_name>Hypertonie</disease_name>
+    <classification>I</classification>
+  </disease_type>
+  <disease_type>
+    <icd10_code>E11</icd10_code>
+    <disease_name>Diabetes Typ 2</disease_name>
+    <classification>E</classification>
+  </disease_type>
+  <disease_type>
+    <icd10_code>I21</icd10_code>
+    <disease_name>Akuter Myokardinfarkt</disease_name>
+    <classification>I</classification>
+  </disease_type>
+  <disease_type>
+    <icd10_code>N40</icd10_code>
+    <disease_name>Prostatavergrößerung</disease_name>
+    <classification>N</classification>
+  </disease_type>
+  <disease_type>
+    <icd10_code>M16</icd10_code>
+    <disease_name>Koxarthrose</disease_name>
+    <classification>M</classification>
+  </disease_type>
+  <disease_type>
+    <icd10_code>J45</icd10_code>
+    <disease_name>Asthma bronchiale</disease_name>
+    <classification>J</classification>
+  </disease_type>
+  <disease_type>
+    <icd10_code>F32</icd10_code>
+    <disease_name>Depression</disease_name>
+    <classification>F</classification>
+  </disease_type>
+</disease_types>

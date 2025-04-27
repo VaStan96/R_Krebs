@@ -1,0 +1,131 @@
+---
+title: "Annual report"
+author: "VaStan96"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r load_data, include=FALSE}
+source('load_data.R')
+data_df <- load_data()
+```
+
+# **Annual report `r year(today())`**
+
+## 1. General indicators
+
+Average age of patients: **`r round(mean(data_df$age))`**
+
+Number of patients total/new: **`r nrow(data_df)`/`r nrow(filter(data_df, year(diagnosis_date) == year(today())-1))`**
+
+Number of cancer cases: **`r nrow(filter(data_df, grepl("^C", icd10_code)))`**
+
+## 2. Patients for the last year
+
+```{r new_patients, echo=FALSE, warning=FALSE}
+library(dplyr)
+new_patients <- data_df %>%
+  filter(year(diagnosis_date) == year(today())-1) %>%
+  select(patient_id, first_name, last_name, date_of_birth, diagnosis_date, disease_name, treatment_type)
+
+knitr::kable(new_patients, caption = 'New patients')
+```
+
+## 3. Graphs
+
+```{r graphs, echo=FALSE, warning=FALSE, fig.height=8, fig.width=11}
+library(ggplot2)
+library(tidyr)
+library(patchwork)
+
+# Histogramm with grouping by gender- and alt-groups
+plot1 <- 
+  ggplot(data_df, aes(x = age_groups, fill = gender)) + 
+  geom_bar(position = position_dodge2(preserve = "single", width = 0.7),
+           color = "black", width = 0.5) +
+  geom_text(stat = 'count', aes(label = ..count..),
+            position = position_dodge2(width = 0.5),
+            vjust = 2, size = 4, color = "black") +
+  labs(title = "Gender- and alt-groups", x = "ages", y = "count", fill = "Gender",
+      subtitle = "Histogramm with grouping by gender- and alt-groups") +
+  scale_x_discrete(drop = FALSE) +
+  scale_fill_manual(values = c('M' = 'lightblue', 'F' = 'gold')) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_line(color = "gray90")
+  )
+
+# Pie-chart
+krebs_code_df <- count(filter(data_df, grepl("^C", icd10_code)), icd10_code, disease_name)
+plot2 <- ggplot(krebs_code_df, aes(x = 1, y = n, fill = disease_name)) +
+  geom_bar(stat = 'identity') +
+  coord_polar(theta = 'y') +
+  geom_text(aes(label = paste0(n/sum(n)*100, "%\n", n)),
+            stat = 'identity',
+            position = position_stack(vjust = 0.5),
+            size = 4, color = 'black') +
+  xlim(c(-0.5, 1.5)) +
+  labs(title = "Type of Krebs", x = "", y = "", fill = "Diseases",
+       subtitle = "Pie-chart with distribution of patients by Krebs-type") +
+  theme_void()
+
+# Plot diagnosis per years
+count_diagnosis_df <- count(data_df, year(diagnosis_date)) %>%
+  mutate(krebs = count(filter(data_df, grepl("^C", icd10_code)), year(diagnosis_date))$n) %>%
+  rename('year' = 'year(diagnosis_date)', 'all' = 'n')
+
+count_diagnosis_lang <- pivot_longer(count_diagnosis_df, cols = c(all, krebs), names_to = 'type', values_to = 'count')
+
+smoothed_spline <- group_by(count_diagnosis_lang, type) %>%
+  group_split() %>%
+  lapply(function(df) {
+    spline_points <- as.data.frame(spline(df$year, df$count, n = 100))
+    spline_points$type <- unique(df$type)
+    return(spline_points)
+  }) %>%
+  bind_rows()
+
+plot3 <- ggplot(smoothed_spline, aes(color = type)) +
+  geom_area(aes(x = x, y = y, fill = type, color = type, linetype = type),
+            alpha = 0.3, position = 'identity') +
+  geom_point(data = count_diagnosis_lang, aes(x = year, y = count, fill = type),
+             shape = 21 , size = 4) +
+  scale_color_manual(values = c('all' = 'blue', 'krebs' = 'red')) +
+  scale_fill_manual(values = c('all' = 'darkblue', 'krebs' = 'darkred')) +
+  scale_linetype_manual(values = c('all' = 'solid', 'krebs' = 'dashed')) +
+  scale_x_continuous(breaks = count_diagnosis_lang$year) +
+  scale_y_continuous(breaks = seq(0, max(count_diagnosis_lang$count) + 1, by = 1)) +
+  labs(title = "Count of diagnosis per years", x = "Year", y = "Count",
+       color = "Type", fill = "Type", linetype = "Type",
+       subtitle = "Count of all and krebs diagnosis per years") +
+  theme_minimal() +
+  theme(
+    panel.grid.major.x = element_line(color = "gray"),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_line(color = "gray"),
+    panel.grid.minor.y = element_blank(),
+  )
+
+# Heatmap
+binn_df <- count(data_df, disease_name, treatment_type)
+
+plot4 <- ggplot(binn_df, aes(x=disease_name, y = treatment_type, fill = n)) +
+  geom_tile(color = 'white') +
+  geom_text(aes(label = n), color = 'black', size = 3) +
+  labs(title = "Heatmap of diseases by treatments", x = "Diseases",
+       y = "Treatments", fill = 'Count of matches') +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  coord_fixed(ratio = 1) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+#show all
+plot1 + plot2 + plot3 + plot4 + plot_layout(ncol = 2)
+
+```
